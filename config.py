@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-DATABASE = 'E:/555/tmp/flaskr.db'
+DATABASE = '/tmp/flaskr.db'
 DEBUG = True
-SECRET_KEY = 'development key'
+SECRET_KEY = 'yanzhipeng'
 USERNAME = 'admin'
 PASSWORD = 'default'

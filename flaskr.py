@@ -67,16 +67,17 @@ def login():
         elif request.form['password'] != app.config['PASSWORD']:
             error = 'Invalid password'
         else:
-            session['logged_in'] = True
+            session['logged_id'] = True
             flash('You were logged in')
             return redirect(url_for('show_entries'))
     return render_template('login.html', error = error)
 
 @app.route("/logout")
 def logout():
-    session.pop('logged_in', None)
+    session.pop('logged_id', None)
     flash('You were logged out')
     return redirect(url_for('show_entries'))
+
 
 if __name__ == '__main__':
 	init_db()
