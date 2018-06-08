@@ -3,7 +3,7 @@
 # @Author: yata
 # @Date:   2018-06-04 16:08:45
 # @Last Modified by:   yata
-# @Last Modified time: 2018-06-04 18:31:41
+# @Last Modified time: 2018-06-07 18:56:24
 
 import os
 import sqlite3
@@ -34,11 +34,31 @@ def get_db():
 		top.sqlite_db = connect_db()
 	return top.sqlite_db
 
+
+class InvalidUsage(Exception):
+    status_code = 400
+    def __init__(self, message, status_code):
+        Exception.__init__(self)
+        self.message = message
+        self.status_code = status_code
+
+@app.errorhandler(InvalidUsage)
+def invalid_usage(error):
+    response = make_response(error.message)
+    response.status_code = error.status_code
+    return response
+
+@app.route("/exception"):
+def exception():
+    raise InvalidUsage("No privilege to access the resource", status_code = 403)
+
+
 @app.teardown_appcontext
 def close_db(exception):
 	top = _app_ctx_stack.top
 	if hasattr(top, 'sqlite_db'):
 		top.sqlite_db.close()
+
 
 @app.route('/')
 def show_entries():
@@ -46,6 +66,8 @@ def show_entries():
     cur = db.execute('select title, text from entries order by id desc ')
     entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
     return render_template('show_entries.html', entries = entries)
+
+
 
 @app.route('/add', methods=['POST'])
 def add_entry():
@@ -57,6 +79,7 @@ def add_entry():
     db.commit()
     flash("New entry was successfully posted")
     return redirect(url_for('show_entries'))
+
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
