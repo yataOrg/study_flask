@@ -7,40 +7,44 @@
 
 import os
 import sqlite3
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, _app_ctx_stack
+from flask import Flask, request, make_response, session, g, redirect, url_for, abort, render_template, flash, \
+    _app_ctx_stack
 
 # create our little application
 app = Flask(__name__)
 app.config.from_envvar('FLASK_SETTINGS', silent=True)
 
+
 # print(app.config)
 def connect_db():
-	rv = sqlite3.connect(app.config['DATABASE'])
-	rv.row_factory = sqlite3.Row
-	return rv
+    rv = sqlite3.connect(app.config['DATABASE'])
+    rv.row_factory = sqlite3.Row
+    return rv
+
 
 def init_db():
-	with app.app_context():
-		db = get_db()
-		with app.open_resource('entries.sql', mode='r') as f:
-			db.cursor().executescript(f.read())
-		db.commit()
+    with app.app_context():
+        db = get_db()
+        with app.open_resource('entries.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
 
 
 def get_db():
-
-	top = _app_ctx_stack.top
-	if not hasattr(top, 'sqlite_db'):
-		top.sqlite_db = connect_db()
-	return top.sqlite_db
+    top = _app_ctx_stack.top
+    if not hasattr(top, 'sqlite_db'):
+        top.sqlite_db = connect_db()
+    return top.sqlite_db
 
 
 class InvalidUsage(Exception):
     status_code = 400
+
     def __init__(self, message, status_code):
         Exception.__init__(self)
         self.message = message
         self.status_code = status_code
+
 
 @app.errorhandler(InvalidUsage)
 def invalid_usage(error):
@@ -48,16 +52,17 @@ def invalid_usage(error):
     response.status_code = error.status_code
     return response
 
-@app.route("/exception"):
+
+@app.route("/exception")
 def exception():
-    raise InvalidUsage("No privilege to access the resource", status_code = 403)
+    raise InvalidUsage("No privilege to access the resource", status_code=403)
 
 
 @app.teardown_appcontext
 def close_db(exception):
-	top = _app_ctx_stack.top
-	if hasattr(top, 'sqlite_db'):
-		top.sqlite_db.close()
+    top = _app_ctx_stack.top
+    if hasattr(top, 'sqlite_db'):
+        top.sqlite_db.close()
 
 
 @app.route('/')
@@ -65,8 +70,7 @@ def show_entries():
     db = get_db()
     cur = db.execute('select title, text from entries order by id desc ')
     entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
-    return render_template('show_entries.html', entries = entries)
-
+    return render_template('show_entries.html', entries=entries)
 
 
 @app.route('/add', methods=['POST'])
@@ -93,7 +97,8 @@ def login():
             session['logged_id'] = True
             flash('You were logged in')
             return redirect(url_for('show_entries'))
-    return render_template('login.html', error = error)
+    return render_template('login.html', error=error)
+
 
 @app.route("/logout")
 def logout():
@@ -103,6 +108,5 @@ def logout():
 
 
 if __name__ == '__main__':
-	init_db()
-	app.run()
-
+    init_db()
+    app.run()
